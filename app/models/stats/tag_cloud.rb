@@ -9,29 +9,29 @@ class TagCloud
     @cut_off      = cut_off
   end
 
-  def tags_for_cloud
-    @tags_for_cloud ||= get_tags_for_cloud
+  def tags
+    @tags ||= get_tags
   end
 
-  def tags_min
-    return @tags_min if @tags_min
+  def min
+    return @min if @min
     calculate_min_and_max
-    @tags_min
+    @min
   end
 
-  def tags_max
-    return @tags_max if @tags_max
+  def max
+    return @max if @max
     calculate_min_and_max
-    @tags_max
+    @max
   end
 
-  def tags_divisor
-    @tags_divisor ||= ((tags_max - tags_min) / LEVELS) + 1
+  def divisor
+    @divisor ||= ((max - min) / LEVELS) + 1
   end
 
   private
 
-  def get_tags_for_cloud
+  def get_tags
     query = "SELECT tags.id, name, count(*) AS count"
     query << " FROM taggings, tags, todos"
     query << " WHERE tags.id = tag_id"
@@ -54,10 +54,10 @@ class TagCloud
   end
 
   def calculate_min_and_max
-    @tags_min, @tags_max = 0, 0
-    tags_for_cloud.each { |t|
-      @tags_max = [t.count.to_i, @tags_max].max
-      @tags_min = [t.count.to_i, @tags_min].min
+    @min, @max = 0, 0
+    tags.each { |t|
+      @max = [t.count.to_i, @max].max
+      @min = [t.count.to_i, @min].min
     }
   end
 
