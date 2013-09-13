@@ -1,4 +1,5 @@
 class TagCloud
+  LEVELS = 10
 
   attr_reader :current_user
   attr_reader :tags_min
@@ -16,9 +17,6 @@ class TagCloud
   def compute
     # tag cloud code inspired by this article
     #  http://www.juixe.com/techknow/index.php/2006/07/15/acts-as-taggable-tag-cloud/
-
-    levels=10
-    # TODO: parameterize limit
 
     # Get the tag cloud for all tags for actions
     query = "SELECT tags.id, name, count(*) AS count"
@@ -38,7 +36,7 @@ class TagCloud
       @tags_min = [t.count.to_i, @tags_min].min
     }
 
-    @tags_divisor = ((max - @tags_min) / levels) + 1
+    @tags_divisor = ((max - @tags_min) / LEVELS) + 1
 
     # Get the tag cloud for all tags for actions
     query = "SELECT tags.id, tags.name AS name, count(*) AS count"
@@ -62,6 +60,6 @@ class TagCloud
       @tags_min_90days = [t.count.to_i, @tags_min_90days].min
     }
 
-    @tags_divisor_90days = ((max_90days - @tags_min_90days) / levels) + 1
+    @tags_divisor_90days = ((max_90days - @tags_min_90days) / LEVELS) + 1
   end
 end
