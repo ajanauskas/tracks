@@ -4,39 +4,34 @@
 class TagCloud
   LEVELS = 10
 
-  attr_reader :current_user
-  attr_reader :tags_min
-  attr_reader :tags_divisor
-  attr_reader :tags_min_90days
-  attr_reader :tags_divisor_90days
-
-  def initialize(current_user)
+  def initialize(current_user, cut_off = nil)
     @current_user = current_user
-  end
-
-  def compute
-    @tags_min, max               = calculate_min_and_max(tags_for_cloud)
-    @tags_divisor                = ((max - @tags_min) / LEVELS) + 1
-    @tags_min_90days, max_90days = calculate_min_and_max(tags_for_cloud_90days)
-    @tags_divisor_90days         = ((max_90days - @tags_min_90days) / LEVELS) + 1
+    @cut_off      = cut_off
   end
 
   def tags_for_cloud
     @tags_for_cloud ||= get_tags_for_cloud
   end
 
+  def tags_min
+    return @tags_min if @tags_min
+    calculate_min_and_max
+    @tags_min
+  end
 
-  def tags_for_cloud_90days
-    @tags_for_cloud_90days ||= get_tags_for_cloud({
-      cut_off: 3.months.ago.beginning_of_day
-    })
+  def tags_max
+    return @tags_max if @tags_max
+    calculate_min_and_max
+    @tags_max
+  end
+
+  def tags_divisor
+    @tags_divisor ||= ((tags_max - tags_min) / LEVELS) + 1
   end
 
   private
 
-  def get_tags_for_cloud(options = {})
-    cut_off = options[:cut_off]
-
+  def get_tags_for_cloud
     query = "SELECT tags.id, name, count(*) AS count"
     query << " FROM taggings, tags, todos"
     query << " WHERE tags.id = tag_id"
@@ -44,7 +39,7 @@ class TagCloud
     query << " AND todos.user_id = ?"
     query << " AND taggings.taggable_type='Todo' "
 
-    if cut_off
+    if @cut_off
       query << "AND (todos.created_at > ? OR todos.completed_at > ?)"
     end
 
@@ -52,19 +47,18 @@ class TagCloud
     query << " ORDER BY count DESC, name"
     query << " LIMIT 100"
 
-    sql_params = [query, current_user.id]
-    sql_params += [cut_off, cut_off] if cut_off
+    sql_params = [query, @current_user.id]
+    sql_params += [@cut_off, @cut_off] if @cut_off
 
     Tag.find_by_sql(sql_params).sort_by { |tag| tag.name.downcase }
   end
 
-  def calculate_min_and_max(tags)
-    min, max = 0, 0
+  def calculate_min_and_max
+    @tags_min, @tags_max = 0, 0
     tags_for_cloud.each { |t|
-      max = [t.count.to_i, max].max
-      min = [t.count.to_i, min].min
+      @tags_max = [t.count.to_i, @tags_max].max
+      @tags_min = [t.count.to_i, @tags_min].min
     }
-    return [min, max]
   end
 
 end
