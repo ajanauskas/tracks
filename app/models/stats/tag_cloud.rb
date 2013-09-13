@@ -14,19 +14,15 @@ class TagCloud
   end
 
   def min
-    return @min if @min
-    calculate_min_and_max
-    @min
+    0
   end
 
   def max
-    return @max if @max
-    calculate_min_and_max
-    @max
+    @max ||= tags.map(&:count).map(&:to_i).max
   end
 
   def divisor
-    @divisor ||= ((max - min) / LEVELS) + 1
+    @divisor ||= (max / LEVELS) + 1
   end
 
   private
@@ -51,14 +47,6 @@ class TagCloud
     sql_params += [@cut_off, @cut_off] if @cut_off
 
     Tag.find_by_sql(sql_params).sort_by { |tag| tag.name.downcase }
-  end
-
-  def calculate_min_and_max
-    @min, @max = 0, 0
-    tags.each { |t|
-      @max = [t.count.to_i, @max].max
-      @min = [t.count.to_i, @min].min
-    }
   end
 
 end
