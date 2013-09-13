@@ -25,6 +25,10 @@ class TagCloud
     @divisor ||= (max / LEVELS) + 1
   end
 
+  def relative_size(tag)
+    (tag.count.to_i - min) / divisor
+  end
+
   private
 
   def get_tags
